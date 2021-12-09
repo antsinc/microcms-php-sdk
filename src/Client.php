@@ -2,6 +2,8 @@
 
 namespace Microcms;
 
+use function GuzzleHttp\Promise\all;
+
 class Client
 {
     private $serviceDomain;
@@ -19,6 +21,55 @@ class Client
         } else {
             $this->client = $client;
         }
+    }
+
+    public function batchCall($commands){
+        assert(count($commands) > 0);
+
+        $promises = [];
+        foreach ($commands as $options){
+            $defaultOptions = ['action'=>'', 'endpoint'=>'', 'options'=>[], 'contentId'=>''];
+            $options = array_merge($defaultOptions, $options);
+
+            $action = $options['action'];
+            $endpoint = $options['endpoint'];
+            $apiOptions = $options['options'];
+            $contentId = $options['contentId'];
+
+            assert($action);
+            assert($endpoint);
+
+            switch ($action){
+                case 'list':
+                    $path = $endpoint;
+                    $promises[] = $this->client->getAsync(
+                        $path,
+                        $this->buildOption([
+                            "query" => $this->buildQuery($apiOptions)
+                        ])
+                    );
+                    break;
+
+                case 'get':
+                    $path = $contentId ? implode("/", [$endpoint, $contentId]) : $endpoint;
+                    $promises[] = $this->client->getAsync(
+                        $path,
+                        $this->buildOption([
+                            "query" => $this->buildQuery($apiOptions)
+                        ])
+                    );
+                    break;
+            }
+        }
+
+        // CallAsync
+        $responses = all($promises)->wait();
+        $return = [];
+        foreach ($responses as $response){
+            $return []= json_decode($response->getBody());
+        }
+
+        return $return;
     }
 
     public function list(string $endpoint, array $options = [])
