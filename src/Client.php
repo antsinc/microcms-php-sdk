@@ -91,9 +91,14 @@ class Client
 
     private function buildOption(array $option = [])
     {
+        $base_uri = sprintf("https://%s.microcms.io/api/v1/", $this->serviceDomain);
+        if(strpos($this->serviceDomain, 'https://') === 0 ){
+            $base_uri = $this->serviceDomain . '/api/v1/';
+        }
+
         return array_merge(
             [
-                'base_uri' => sprintf("https://%s.microcms.io/api/v1/", $this->serviceDomain),
+                'base_uri' => $base_uri,
                 'headers' => [
                     'X-MICROCMS-API-KEY' => $this->apiKey,
                 ]
